@@ -119,7 +119,7 @@ public class main extends JavaPlugin implements Listener {
 				blockBuild.get(player).get(i).setType(Material.AIR);
 			}
 			blockBuild.remove(player);
-			player.sendMessage(debutMessage + "Vous avez terminer de parametrer la maison: " + playerMaison.get(player).toString() + " avec " + vendre.getInt(playerMaison.get(player) + " block.i") + ".");
+			player.sendMessage(debutMessage + "Vous avez terminer de paramétrer la maison: " + playerMaison.get(player).toString() + ".");
 			playerMaison.remove(player);
 		}else if(args[0].equalsIgnoreCase("setworld")){
 			config.set("Monde", player.getLocation().getWorld().getName());
