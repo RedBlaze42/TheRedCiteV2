@@ -2,15 +2,15 @@ package fr.redblaze.theredcite.tools;
 
 import java.lang.reflect.Field;
 
-import net.minecraft.server.v1_8_R3.IChatBaseComponent;
-import net.minecraft.server.v1_8_R3.PacketPlayOutChat;
-import net.minecraft.server.v1_8_R3.PacketPlayOutPlayerListHeaderFooter;
-import net.minecraft.server.v1_8_R3.PacketPlayOutTitle;
-import net.minecraft.server.v1_8_R3.IChatBaseComponent.ChatSerializer;
-import net.minecraft.server.v1_8_R3.PacketPlayOutTitle.EnumTitleAction;
-
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
+
+import net.minecraft.server.v1_14_R1.IChatBaseComponent;
+import net.minecraft.server.v1_14_R1.IChatBaseComponent.ChatSerializer;
+import net.minecraft.server.v1_14_R1.PacketPlayOutChat;
+import net.minecraft.server.v1_14_R1.PacketPlayOutPlayerListHeaderFooter;
+import net.minecraft.server.v1_14_R1.PacketPlayOutTitle;
+import net.minecraft.server.v1_14_R1.PacketPlayOutTitle.EnumTitleAction;
 
 public class Custom {
 	
@@ -30,6 +30,7 @@ public class Custom {
 		((CraftPlayer)player).getHandle().playerConnection.sendPacket(packet);
 	}
 	
+	@SuppressWarnings("deprecation")
 	private static Object constructHeaderAndFooterPacket(Object header, Object footer){
 		try{
 			Object packet = PacketPlayOutPlayerListHeaderFooter.class.newInstance();
@@ -60,7 +61,7 @@ public class Custom {
 
 	public static void sendActionBar(Player player, String message){
 		IChatBaseComponent cbc = ChatSerializer.a("{\"text\": \"" + message + "\"}");
-		PacketPlayOutChat ppoc = new PacketPlayOutChat(cbc, (byte) 2);
+		PacketPlayOutChat ppoc = new PacketPlayOutChat(cbc);
 		((CraftPlayer)player).getHandle().playerConnection.sendPacket(ppoc);
 	}
 }

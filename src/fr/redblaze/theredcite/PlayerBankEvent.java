@@ -66,7 +66,7 @@ public class PlayerBankEvent implements Listener{
 			Inventory inv = event.getInventory();
 			Player player = (Player) event.getWhoClicked();
 			if(event.getCurrentItem() != null && event.getCurrentItem().getType() != null && event.getCurrentItem().getType() != Material.AIR){
-			if(event.getInventory().getTitle().equals(menu.getVirementInv(player,getBalance(player)).getTitle())){
+			if(event.getView().getTitle().equals("§aVirement")){
 				if(event.getCurrentItem().getItemMeta().hasLore()){
 				if(event.getCurrentItem().getItemMeta().getLore().equals(menu.getBlock(event.getCurrentItem().getAmount()).getItemMeta().getLore())){
 					int amount = event.getCurrentItem().getAmount();

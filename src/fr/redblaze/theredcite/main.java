@@ -41,15 +41,17 @@ public class main extends JavaPlugin implements Listener {
 	File fichierAVendre = new File(this.getDataFolder() + "/maisonAVendre.yml");
 	File fichierMaison = new File(this.getDataFolder() + "/maison.yml");
 	File fichierBalance = new File(this.getDataFolder() + "/balance.yml");
+	File fichierTeams = new File(this.getDataFolder() + "/teams.yml");
 	File folder = new File("plugins/TheRedCite/Factions");
 	FileConfiguration vendre = YamlConfiguration.loadConfiguration(fichierAVendre);
 	FileConfiguration maison = YamlConfiguration.loadConfiguration(fichierMaison);
+	FileConfiguration teams = YamlConfiguration.loadConfiguration(fichierTeams);
 	FileConfiguration config = getConfig();
 	FileConfiguration balance = YamlConfiguration.loadConfiguration(fichierBalance);
 	Listener event = new PlayerBankEvent(this,this.getDataFolder());
 	World world;
 	EmeraldMenu menu = new EmeraldMenu(this);
-	String debutMessage = ChatColor.GREEN + "[CitéDesBois]";
+	String debutMessage = ChatColor.GOLD + "[CitéDesSables] ";
 	boolean isNonInit = false;
 	HashMap<Player,Integer> playerMaison = new HashMap<Player, Integer>();
 	HashMap<Player, List<Block>> blockBuild = new HashMap<Player, List<Block>>();
@@ -70,14 +72,18 @@ public class main extends JavaPlugin implements Listener {
 		fichierBalance.createNewFile();
 		maison.save(fichierBalance);
 	}
+	if(!fichierTeams.exists()){
+		fichierTeams.createNewFile();
+		teams.save(fichierTeams);
+	}
 	} catch (IOException e) {
 		e.printStackTrace();
 	}
 	if(config.getString("Monde") != null){
 		world = Bukkit.getServer().getWorld(config.getString("Monde"));
-		log.info("[TheRedCite]Cité crée dans le monde: " + world.getName());
+		log.info("[TheRedCite] Cité crée dans le monde: " + world.getName());
 	}else{
-		log.info("[TheRedCite]Monde non trouvé");
+		log.info("[TheRedCite] Monde non trouvé");
 	}
 	
 	getServer().getPluginManager().registerEvents(this, this);
@@ -124,37 +130,7 @@ public class main extends JavaPlugin implements Listener {
 		}else if(args[0].equalsIgnoreCase("setworld")){
 			config.set("Monde", player.getLocation().getWorld().getName());
 			world = Bukkit.getServer().getWorld(player.getLocation().getWorld().getName());
-			player.sendMessage(debutMessage + "Cité dans " + player.getLocation().getWorld().getName());
-		/*}else if(args[0].equalsIgnoreCase("spawn")){
-			if(args.length>=3){
-				// /citesetup spawn <Nom>
-				player.sendMessage(debutMessage + "Villageois:");
-			}else{
-				player.sendMessage(debutMessage + "Utilisation: /citesetup spawn <Nom> <NomAffiché>");
-			}
-/*			int i = villageois.getInt("i") + 1;
-			villageois.set("i", i);
-			villageois.set(i + ".type", Integer.parseInt(args[1]));
-			villageois.set(i + ".vector", player.getLocation().toVector());
-			spawnVillager(world, player.getLocation().toVector(),);
-			player.sendMessage(debutMessage + "Villageois spawné de type: " + Villager.Profession.getProfession(Integer.parseInt(args[1])).toString().toLowerCase());
-			try {
-				villageois.save(fichierVillageois);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			}
-		}else if (args[0].equalsIgnoreCase("addTrade")){
-			if(args.length>=3){
-				if(args.length>=4){
-					addTrade(args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
-				}else{
-					addTrade(args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]));
-				}
-			}else{
-				player.sendMessage(debutMessage+"Utilisation: /citesetup addTrade <Nom> <Item1> [Item2] <Item a vendre>");
-			}*/
-		
+			player.sendMessage(debutMessage + "Cité dans " + player.getLocation().getWorld().getName());		
 		}else if(args[0].equalsIgnoreCase("grief")){
 			if(griefs.contains(player)){
 				griefs.remove(player);
@@ -188,22 +164,12 @@ public class main extends JavaPlugin implements Listener {
 				blockBuild.get(event.getPlayer()).add(blockBuild.size()-1,  event.getBlock());
 				vendre.set(playerMaison.get(event.getPlayer()).toString() + ".i", i);
 			}else{
-				if(!Outils.isOk(event.getBlock().getX(), event.getBlock().getZ(), config.getInt("x1"), config.getInt("z2"), config.getInt("x1"), config.getInt("z1"))){
-				if(!griefs.contains(event.getPlayer())){
+				if(!Outils.isOk(event.getBlock().getX(), event.getBlock().getZ(), config.getInt("x1"), config.getInt("z2"), config.getInt("x1"), config.getInt("z1"))){//Dans la cite ?
+				if(!griefs.contains(event.getPlayer())){//En mode grief ?
 				if(event.getBlock().getLocation().getBlockX()<config.getInt("minx") && event.getBlock().getLocation().getBlockX()<config.getInt("maxx")){
 				if(event.getBlock().getLocation().getBlockZ()<config.getInt("minz") && event.getBlock().getLocation().getBlockZ()<config.getInt("maxz")){
 				Player player = event.getPlayer();
-				boolean isOK  = true;
-				for(int i = 1;i<=maison.getInt(player.getUniqueId() + ".i");i++){
-					for(int v = 1;v <=maison.getInt(player.getUniqueId() + "." + i + ".i");v++){
-						if(maison.getVector(player.getUniqueId() + "." + i + "." + v).equals(event.getBlock().getLocation().toVector())){
-							isOK = false;
-							v=1000;
-							i=1000;
-						}
-					}
-				}
-				if(isOK){
+				if(in_house(player,event.getBlock())){
 					event.setCancelled(true);
 				}
 			}
@@ -217,26 +183,23 @@ public class main extends JavaPlugin implements Listener {
 	@EventHandler
 	public void onBreak(BlockBreakEvent event){
 		if(event.getBlock().getWorld().equals(world)){
-			if(!griefs.contains(event.getPlayer())){
-			if(event.getBlock().getLocation().getBlockX()<config.getInt("minx") && event.getBlock().getLocation().getBlockX()<config.getInt("maxx")){
-			if(event.getBlock().getLocation().getBlockZ()<config.getInt("minz") && event.getBlock().getLocation().getBlockZ()<config.getInt("maxz")){
-			Player player = event.getPlayer();
-			boolean isOK  = true;
-			for(int i = 1;i<=maison.getInt(player.getUniqueId() + ".i");i++){
-				for(int v = 1;v <=maison.getInt(player.getUniqueId() + "." + i + ".i");v++){
-					if(maison.getVector(player.getUniqueId() + "." + i + "." + v).equals(event.getBlock().getLocation().toVector())){
-						isOK = false;
-						v=1000;
-						i=1000;
-					}
+			if(playerMaison.containsKey(event.getPlayer())){
+				event.getPlayer().sendMessage(debutMessage + "Block ajouté");
+				int i = vendre.getInt(playerMaison.get(event.getPlayer()).toString() + ".i") + 1;
+				vendre.set(playerMaison.get(event.getPlayer()).toString() + "." + i, event.getBlock().getLocation().toVector());
+				blockBuild.get(event.getPlayer()).add(blockBuild.size()-1,  event.getBlock());
+				vendre.set(playerMaison.get(event.getPlayer()).toString() + ".i", i);
+			}else {
+				if(!griefs.contains(event.getPlayer())){
+				if(event.getBlock().getLocation().getBlockX()<config.getInt("minx") && event.getBlock().getLocation().getBlockX()<config.getInt("maxx")){
+				if(event.getBlock().getLocation().getBlockZ()<config.getInt("minz") && event.getBlock().getLocation().getBlockZ()<config.getInt("maxz")){
+				Player player = event.getPlayer();
+				if(in_house(player,event.getBlock())){
+					event.setCancelled(true);
 				}
-			}
-			
-			if(isOK){
-				event.setCancelled(true);
-			}
-			}
-			}
+				}
+				}
+				}
 			}
 		}
 	}
@@ -267,7 +230,7 @@ public class main extends JavaPlugin implements Listener {
 			 }
 			 }
 			 if(montant == 0){
-				 slot = 1000;
+				 break;
 			 }
 			 player.updateInventory();
 		 }
@@ -313,53 +276,41 @@ public class main extends JavaPlugin implements Listener {
 				if(event.getClickedBlock().getState() instanceof Sign){
 					Sign sign = (Sign) event.getClickedBlock().getState();
 					if(sign.getLine(0).equals("§a[§2A vendre§a]")){
-					int amount = getAmount(event.getPlayer(),Material.EMERALD);
-					if(amount>=Integer.parseInt(sign.getLine(2).replaceAll(" §aEmeraude", "").replaceAll("§2§l", ""))){
-					int n = Integer.parseInt(sign.getLine(1));
-					int nb = maison.getInt(player.getUniqueId() + ".i") + 1;
-					for(int i = 1;i<=vendre.getInt(n + ".i");i++){
-						maison.set(player.getUniqueId() + "." + nb + "." + i, vendre.getVector(n + "." + i));
-					}
-					maison.set(player.getUniqueId() + "." + nb + ".i", vendre.getInt(n + ".i"));
-					maison.set(player.getUniqueId() + ".i", nb);
-					clearAll(player, Material.EMERALD, Integer.parseInt(sign.getLine(2).replaceAll(" §aEmeraude", "").replaceAll("§2§l", "")));
-					player.sendMessage(debutMessage + "Vous avez acheté la maison " + n + " pour " + sign.getLine(2).replaceAll(" §aEmeraude", "").replaceAll("§2§l", ""));
-					sign.setLine(0, ChatColor.GREEN + "Maison de");
-					sign.setLine(1, ChatColor.DARK_GREEN + "" + ChatColor.BOLD + player.getName());
-					sign.setLine(2, Integer.toString(n));// TODO Custom
-					sign.setLine(3, "");
-					sign.update();
-					try {
-						maison.save(fichierMaison);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					}else{
-						event.getPlayer().sendMessage(debutMessage + "Vous n'avez pas assez d'argent; il vous manque " + Integer.toString(Integer.parseInt(sign.getLine(2).replaceAll(" §aEmeraude", "").replaceAll("§2§l", "")) - amount) + " emeraudes");
-					}
+						int amount = getAmount(event.getPlayer(),Material.EMERALD);
+						if(amount>=Integer.parseInt(sign.getLine(2).replaceAll(" §aEmeraude", "").replaceAll("§2§l", ""))){
+						int n = Integer.parseInt(sign.getLine(1));
+						int nb = maison.getInt(player.getUniqueId() + ".i") + 1;
+						for(int i = 1;i<=vendre.getInt(n + ".i");i++){
+							maison.set(player.getUniqueId() + "." + nb + "." + i, vendre.getVector(n + "." + i));
+						}
+						maison.set(player.getUniqueId() + "." + nb + ".i", vendre.getInt(n + ".i"));
+						maison.set(player.getUniqueId() + ".i", nb);
+						clearAll(player, Material.EMERALD, Integer.parseInt(sign.getLine(2).replaceAll(" §aEmeraude", "").replaceAll("§2§l", "")));
+						player.sendMessage(debutMessage + "Vous avez acheté la maison " + n + " pour " + sign.getLine(2).replaceAll(" §aEmeraude", "").replaceAll("§2§l", ""));
+						sign.setLine(0, ChatColor.GREEN + "Maison de");
+						sign.setLine(1, ChatColor.DARK_GREEN + "" + ChatColor.BOLD + player.getName());
+						sign.setLine(2, Integer.toString(n));// TODO Custom
+						sign.setLine(3, "");
+						sign.update();
+						try {
+							maison.save(fichierMaison);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						}else{
+							event.getPlayer().sendMessage(debutMessage + "Vous n'avez pas assez d'argent; il vous manque " + Integer.toString(Integer.parseInt(sign.getLine(2).replaceAll(" §aEmeraude", "").replaceAll("§2§l", "")) - amount) + " emeraudes");
+						}
 					}else if(sign.getLine(0).equals("Teleportation")){
 						teleport(player);
-					}else if(!griefs.contains(event.getPlayer())){
-					
-					boolean isOK  = true;
-					
-					for(int i = 1;i<=maison.getInt(player.getUniqueId() + ".i");i++){
-						for(int v = 1;v <=maison.getInt(player.getUniqueId() + "." + i + ".i");v++){
-							if(maison.getVector(player.getUniqueId() + "." + i + "." + v).equals(event.getClickedBlock().getLocation().toVector())){
-								isOK = false;
-								v=1000;
-								i=1000;
-							}
+					}else if(!griefs.contains(event.getPlayer())){//Si il n'est pas en mode grief
+						if(in_house(player,event.getClickedBlock())){
+							event.setCancelled(true);
 						}
 					}
-					if(isOK){
-						event.setCancelled(true);
-					}
-				}
 				}
 			}
 		}
-		}
+	}
 
 	public int getAmount(Inventory inv,Material m){
 		int amount = 0;
@@ -390,11 +341,22 @@ public class main extends JavaPlugin implements Listener {
 	void teleport(Player player){
 		if(maison.getInt(player.getUniqueId() + ".i")>0){
 			player.teleport(new Location(world, maison.getVector(player.getUniqueId() + ".1.1").getX(), maison.getVector(player.getUniqueId() + ".1.1").getY(), maison.getVector(player.getUniqueId() + ".1.1").getZ()));
-			player.playSound(player.getLocation(), Sound.ENDERMAN_TELEPORT, 100, 100);
+			player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 100, 100);
 			player.sendMessage(debutMessage + "Vous avez été téléporté vers votre maison");
 		}else{
 			player.sendMessage(debutMessage + "Vous n'avez aucune maison");
 		}
+	}
+	
+	boolean in_house(Player player,Block block) {
+		for(int i = 1;i<=maison.getInt(player.getUniqueId() + ".i");i++){
+			for(int v = 1;v <=maison.getInt(player.getUniqueId() + "." + i + ".i");v++){
+				if(maison.getVector(player.getUniqueId() + "." + i + "." + v).equals(block.getLocation().toVector())){
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 }
 
