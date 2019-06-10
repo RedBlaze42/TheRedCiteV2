@@ -1,2 +1,8 @@
 Monde: world
+debut_messages: "§e[Cité des sables] "
 Nom: TheRedCite
+cite_coords:
+    xmin: -100000 
+    zmin: -100000
+    xmax: 100000 
+    zmax: 100000

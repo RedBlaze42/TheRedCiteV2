@@ -1,9 +1,13 @@
 name: TheRedCite
 author: Redblaze42
-website: https://www.youtube.com/channel/UCkdxFt93jnYX6oUkgTHjz3Q
-version: 0.98
+version: 2.0.1
+website: redblaze.ovh
 main: fr.redblaze.theredcite.main
 commands:
   citesetup:
+    description: "Configure une cité"
+    permission: theredcite.setup
+#    usage: "Usage: setworld,spawn,addTrade,createHouse,endHouse"
+    aliases:
+     - cites
   menu:
-  

@@ -3,38 +3,54 @@ package fr.redblaze.theredcite.tools;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.server.v1_8_R3.IChatBaseComponent;
-import net.minecraft.server.v1_8_R3.IChatBaseComponent.ChatSerializer;
-import net.minecraft.server.v1_8_R3.PacketPlayOutTitle;
-import net.minecraft.server.v1_8_R3.PacketPlayOutTitle.EnumTitleAction;
-
 import org.bukkit.Material;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.util.Vector;
+
+import net.minecraft.server.v1_14_R1.IChatBaseComponent;
+import net.minecraft.server.v1_14_R1.IChatBaseComponent.ChatSerializer;
+import net.minecraft.server.v1_14_R1.PacketPlayOutTitle;
+import net.minecraft.server.v1_14_R1.PacketPlayOutTitle.EnumTitleAction;
 
 public class Outils {
-	public int getAmount(Inventory inv,ItemStack m){
-		int amount = 0;
-		int montant;
-		for(int slot = 0;slot <= inv.getSize();slot++)
-			if(inv.getItem(slot) != null){
-			montant = inv.getItem(slot).getAmount();
-			inv.getItem(slot).setAmount(1);
-			m.setAmount(1);
-			if(inv.getItem(slot).equals(m)){
-				inv.getItem(slot).setAmount(montant);
-				amount = amount + inv.getItem(slot).getAmount();
-			}
-		}
-	
-		
-		return amount;
+	public static void clearAll(Player player,Material m,int montant){
+		 for(int slot = 0;slot<=player.getInventory().getSize();slot++){
+			 if(player.getInventory().getItem(slot) != null){
+			 if(player.getInventory().getItem(slot).getType().equals(m)){
+				
+				 if(montant<player.getInventory().getItem(slot).getAmount()){
+					 ItemStack item = player.getInventory().getItem(slot);
+					 item.setAmount(item.getAmount() - montant);
+					 player.getInventory().setItem(slot,item);
+					 montant = 0;
+				 }
+				 else{
+			     montant = montant - player.getInventory().getItem(slot).getAmount();
+				 player.getInventory().setItem(slot,new ItemStack(Material.AIR));
+				 }
+			 }
+			 }
+			 if(montant == 0){
+				 break;
+			 }
+			 player.updateInventory();
+		 }
 	}
 	public static int getAmount(Player player,ItemStack m){
-		ItemStack[] item = player.getInventory().getContents();
+		return getAmount(player.getInventory(), m);
+	}
+	public static int getAmount(Player player,Material m){
+		return getAmount(player.getInventory(), new ItemStack(m));
+	}
+	public static int getAmount(Inventory inv,Material m){
+		return getAmount(inv, new ItemStack(m));
+	}
+	public static int getAmount(Inventory inv,ItemStack m){
+		ItemStack[] item = inv.getContents();
 		int amount = 0;
 		int montant;
 		for(int slot = 0;slot < item.length;slot++){
@@ -47,9 +63,7 @@ public class Outils {
 				amount = amount + item[slot].getAmount();
 		}
 		}
-	}
-		
-		
+	}		
 		return amount;
 	}
 
@@ -60,39 +74,17 @@ public class Outils {
 			return false;
 		}
 	}
-	public static void clearAll(Player player,ItemStack m,int montant){
-		m.setAmount(1);
-		 for(int slot = 0;slot<=player.getInventory().getSize();slot++){
-			 //player.sendMessage(slot + "    amount: " + montant);// TODO DEBUG
-			 if(player.getInventory().getItem(slot) != null){
-				 ItemStack playeritem = player.getInventory().getItem(slot).clone();
-				 playeritem.setAmount(1);
-				 if(playeritem.equals(m)){
-				 if(montant<player.getInventory().getItem(slot).getAmount()){
-					 ItemStack item = player.getInventory().getItem(slot);
-					 item.setAmount(item.getAmount() - montant);
-				//	 player.sendMessage("ok");// TODO DEBUG
-					 montant = 0;
-					 
-				 }
-				 else{
-				 montant = montant - player.getInventory().getItem(slot).getAmount();
-				 player.getInventory().setItem(slot,new ItemStack(Material.AIR));
-				 }
-				 
-			 }
-			 }
-			 if(montant <= 0){
-				 break;
-			 }
-			 
-			 player.updateInventory();
-		 }
+	
+	public static boolean vector_block_equals(Vector vec1, Vector vec2) {
+		boolean x= vec1.getBlockX()==vec2.getBlockX();
+		boolean y= vec1.getBlockY()==vec2.getBlockY();
+		boolean z= vec1.getBlockZ()==vec2.getBlockZ();
+		return x && y && z;
 	}
 	
-	public static boolean isOk(int x,int z,int x2,int z2,int x1, int z1){
-	    boolean ifx = x <= x2 && x >= x1;
-	    boolean ifz = z <= z2 && z >= z1;
+	public static boolean is_in_coords(int x,int z,int xmin,int zmin,int xmax, int zmax){
+	    boolean ifx = x <= xmax && x >= xmin;
+	    boolean ifz = z <= zmax && z >= zmin;
 	    return ifx && ifz;
 	}
 	
