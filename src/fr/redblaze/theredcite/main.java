@@ -4,18 +4,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
-
-import net.md_5.bungee.api.ChatColor;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
-import org.bukkit.WorldCreator;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
@@ -23,7 +19,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -33,10 +28,10 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerTakeLecternBookEvent;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import fr.redblaze.theredcite.tools.Outils;
@@ -53,7 +48,7 @@ public class main extends JavaPlugin implements Listener {
 	FileConfiguration config = getConfig();
 	FileConfiguration balance = YamlConfiguration.loadConfiguration(fichierBalance);
 	Listener event = new PlayerBankEvent(this,this.getDataFolder());
-
+	ArrayList<Material> item_banned_rightclick = new ArrayList<>(Arrays.asList(Material.ITEM_FRAME, Material.GLASS_BOTTLE, Material.SPLASH_POTION, Material.LINGERING_POTION));
 	String debutMessage="[Cité des sables]";
 	World world;
 	teams teams_handler = new teams(this, teams);
@@ -123,6 +118,7 @@ public class main extends JavaPlugin implements Listener {
 		return true;
 	    }
 		Player player = (Player) sender;
+		player.sendMessage("Team:"+teams_handler.get_player_team(player));
 		if(player.hasPermission("theredcube.staff")){
 		if(args.length>0){
 		if(args[0].equalsIgnoreCase("createHouse")){// CREATE HOUSE
@@ -180,7 +176,7 @@ public class main extends JavaPlugin implements Listener {
 	public void onBreak(BlockBreakEvent event){
 		if(event.getBlock().getWorld().equals(world)){
 			if(house_handler.is_player_in_conf(event.getPlayer())){// SI en cours de création de maison
-				house_handler.add_bloc_to_house(event.getPlayer(), event.getBlock());
+				house_handler.add_bloc_to_house(event.getPlayer(), event.getBlock());// TODO remove block if block=barrier
 				event.setCancelled(true);
 			}else {
 				if(!griefs.contains(event.getPlayer())){
@@ -195,13 +191,29 @@ public class main extends JavaPlugin implements Listener {
 		}
 	}
 	
+	
+	@EventHandler
+	public void onExplosion(EntityExplodeEvent event) {
+		if(location_in_cite(event.getLocation())) event.setCancelled(true);
+	}
+	
 	@EventHandler
 	public void onEntityDamage(EntityDamageByEntityEvent event){
 		if(location_in_cite(event.getEntity().getLocation())) {
 			Entity damager = event.getDamager();
 
 		    if (damager instanceof Player) {
-		    	if(!is_legit_griefer((Player) damager)) event.setCancelled(true);
+		    	Player player = (Player) damager;
+		    	Location loc = player.getLocation();
+		    	if(!griefs.contains(player)){
+					if(location_in_cite(loc)){//Dans la cite ?
+						if(!in_house(player,loc)){
+							event.setCancelled(true);
+						}
+					}
+				}
+		    }else {
+		    	event.setCancelled(true);
 		    }
 			
 			
@@ -240,13 +252,18 @@ public class main extends JavaPlugin implements Listener {
 
 	@EventHandler
 	public void onClick(PlayerInteractEvent event){
-		if(event.getAction() == Action.PHYSICAL && event.getClickedBlock().getType() == Material.FARMLAND) {
+		Player player = event.getPlayer();
+		if(is_legit_griefer(player) || in_house(player, player.getLocation())) {
+			event.setCancelled(false);
+		}else if(event.getAction() == Action.PHYSICAL && event.getClickedBlock().getType() == Material.FARMLAND) {
 	        event.setCancelled(true);
-		}else if(event.getPlayer().getWorld().equals(world)){
+		}else if(item_banned_rightclick.contains(player.getInventory().getItemInMainHand().getType()) || item_banned_rightclick.contains(player.getInventory().getItemInOffHand().getType())) {
+			event.setCancelled(true);
+		}else if(location_in_cite(event.getPlayer().getLocation())){
 			
 			if(event.getAction().equals(Action.RIGHT_CLICK_BLOCK)){
 				Location block_location=event.getClickedBlock().getLocation();
-				if(location_in_cite(block_location) && !in_house(event.getPlayer(), block_location) && !is_legit_griefer(event.getPlayer()) && house_handler.location_in_any_house(block_location)) {
+				if(location_in_cite(block_location) && !in_house(event.getPlayer(), block_location) && !is_legit_griefer(event.getPlayer()) && house_handler.location_in_any_house(block_location)) {//DAns la cité pas legit griefer pas dans sa maison mais dans une maison
 					event.setCancelled(true);
 				}
 				
@@ -256,7 +273,16 @@ public class main extends JavaPlugin implements Listener {
 			}
 		}
 	}
-
+	
+	@EventHandler
+	public void onArmorStandClicking(PlayerArmorStandManipulateEvent event) {
+		Player player = event.getPlayer();
+		Location clicked_location = event.getRightClicked().getLocation();
+		if(!is_legit_griefer(player) && !in_house(player, clicked_location) && location_in_cite(clicked_location)) {
+			event.setCancelled(true);
+		}
+	}
+	
 	@EventHandler
 	public void onBookTaken(PlayerTakeLecternBookEvent event) {
 		Location location_event = event.getLectern().getLocation();

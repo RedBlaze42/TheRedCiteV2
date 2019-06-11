@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 public class teams {
+	@SuppressWarnings("unused")
 	private Plugin plugin ;
 	private FileConfiguration team_file;
 
@@ -22,9 +23,7 @@ public class teams {
 				}
 			}
 		}
-		return null;
+		return player.getName();
 	}
-	
-	
 	
 }

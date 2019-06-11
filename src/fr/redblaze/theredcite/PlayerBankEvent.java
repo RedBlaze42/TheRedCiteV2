@@ -73,7 +73,7 @@ public class PlayerBankEvent implements Listener{
 					int eminv = Outils.getAmount(player, new ItemStack(Material.EMERALD));
 					if(amount<=eminv){
 						addEmerald(player, amount);
-						Outils.clearAll(player,new ItemStack(Material.EMERALD),amount);
+						Outils.clearAll(player,Material.EMERALD,amount);
 						player.sendMessage(getBalance(player) + ""); // TODO Debug
 					}else{
 						player.sendMessage(ChatColor.DARK_GREEN + "[Bank]" + ChatColor.GREEN + "Vous n'avez pas assez d'emeraude");

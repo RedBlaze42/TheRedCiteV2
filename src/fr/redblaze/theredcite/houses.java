@@ -1,6 +1,5 @@
 package fr.redblaze.theredcite;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +19,7 @@ import net.md_5.bungee.api.ChatColor;
 
 public class houses {
 	private teams teams_handler;
+	@SuppressWarnings("unused")
 	private World cite_world;
 	private FileConfiguration player_houses;
 	private FileConfiguration house_to_sell;
