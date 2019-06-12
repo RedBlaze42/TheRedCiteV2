@@ -44,11 +44,23 @@ public class houses {
 	}
 	
 	void add_bloc_to_house(Player player,Block block) {
-		player.sendMessage(debutMessage + "Block ajouté");
-		int i = house_to_sell.getInt(players_in_configuration.get(player).toString() + ".i") + 1;
-		house_to_sell.set(players_in_configuration.get(player).toString() + "." + i, block.getLocation().toVector());
-		conf_blocks.get(player).add(conf_blocks.size()-1,  block);
-		house_to_sell.set(players_in_configuration.get(player).toString() + ".i", i);
+		if(location_in_any_house(block.getLocation())) {
+			player.sendMessage(debutMessage + ChatColor.RED + "Bloc déjà présent dans une autre maison");
+		}else {
+			player.sendMessage(debutMessage + "Block ajouté");
+			conf_blocks.get(player).add(block);
+		}
+		house_to_sell.set("i", players_in_configuration.get(player));
+	}
+	
+	void remove_bloc_to_house(Player player,Block block) {
+		List<Block> block_list = conf_blocks.get(player);
+		if(block_list.contains(block)) {
+			player.sendMessage(debutMessage + ChatColor.RED + "Bloc enlevé");
+			block_list.remove(block);
+		}else {
+			player.sendMessage(debutMessage + ChatColor.RED + "Le bloc n'est pas un bloc de construction");
+		}
 	}
 	
 	void begin_house_conf(Player player) {
@@ -56,22 +68,25 @@ public class houses {
 		
 		players_in_configuration.put(player, house_to_sell.getInt("i")+1);
 		conf_blocks.put(player, new ArrayList<Block>());
-		house_to_sell.set(players_in_configuration.get(player).toString() + ".i", 0);
-		house_to_sell.set("i", players_in_configuration.get(player));
 		player.sendMessage(debutMessage + "Vous Commencez le build de la maison avec des blocs de barrière: " + players_in_configuration.get(player).toString() + ".");
 		player.getInventory().addItem(new ItemStack(Material.BARRIER));
 	}
 	
 	void end_house_conf(Player player) {
 		if(players_in_configuration.containsKey(player)) {
-			for(int i = 0;i<conf_blocks.get(player).size();i++){
-				Block param_block = conf_blocks.get(player).get(i);
+			List<Block> block_list = conf_blocks.get(player);
+			String house_number = players_in_configuration.get(player).toString();
+			
+			house_to_sell.set(house_number + ".i", block_list.size());
+			for(int i = 0;i<block_list.size();i++){
+				Block param_block = block_list.get(i);
+				house_to_sell.set(players_in_configuration.get(player).toString() + "." + Integer.toString(i+1), block_list.get(i).getLocation().toVector());
 				if(param_block.getType().equals(Material.BARRIER)) {
 					param_block.setType(Material.AIR);
 				}
 			}
 			conf_blocks.remove(player);
-			player.sendMessage(debutMessage + "Vous avez terminer de paramétrer la maison: " + players_in_configuration.get(player).toString() + ".");
+			player.sendMessage(debutMessage + "Vous avez terminé de paramétrer la maison: " + players_in_configuration.get(player).toString() + ".");
 			players_in_configuration.remove(player);
 		}else {
 			player.sendMessage(debutMessage + "Vous n'avez pas de maison en cours de paramétrage");
@@ -105,4 +120,19 @@ public class houses {
 			event.getPlayer().sendMessage(debutMessage + "Vous n'avez pas assez d'argent; il vous manque " + Integer.toString(Integer.parseInt(sign.getLine(2).replaceAll(" §aEmeraude", "").replaceAll("§2§l", "")) - amount) + " emeraudes");
 		}
 	}
+	/*
+	boolean in_house(Player player,Location loc) {
+		if(!loc.getWorld().equals(cite_world)){
+			return false;
+		}
+		
+		for(int i = 1;i<=player_houses.getInt(teams_handler.get_player_team(player) + ".i");i++){
+			for(int v = 1;v <=player_houses.getInt(teams_handler.get_player_team(player) + "." + i + ".i");v++){
+				if(player_houses.getVector(teams_handler.get_player_team(player) + "." + i + "." + v).equals(loc.toVector())){
+					return true;
+				}
+			}
+		}
+		return false;
+	}*/
 }

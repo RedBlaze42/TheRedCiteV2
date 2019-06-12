@@ -12,7 +12,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -48,7 +47,7 @@ public class main extends JavaPlugin implements Listener {
 	FileConfiguration config = getConfig();
 	FileConfiguration balance = YamlConfiguration.loadConfiguration(fichierBalance);
 	Listener event = new PlayerBankEvent(this,this.getDataFolder());
-	ArrayList<Material> item_banned_rightclick = new ArrayList<>(Arrays.asList(Material.ITEM_FRAME, Material.GLASS_BOTTLE, Material.SPLASH_POTION, Material.LINGERING_POTION));
+	ArrayList<Material> item_banned_rightclick = new ArrayList<>(Arrays.asList(Material.ITEM_FRAME, Material.GLASS_BOTTLE, Material.SPLASH_POTION, Material.LINGERING_POTION, Material.ARMOR_STAND));
 	String debutMessage="[Cité des sables]";
 	World world;
 	teams teams_handler = new teams(this, teams);
@@ -176,13 +175,16 @@ public class main extends JavaPlugin implements Listener {
 	public void onBreak(BlockBreakEvent event){
 		if(event.getBlock().getWorld().equals(world)){
 			if(house_handler.is_player_in_conf(event.getPlayer())){// SI en cours de création de maison
-				house_handler.add_bloc_to_house(event.getPlayer(), event.getBlock());// TODO remove block if block=barrier
-				event.setCancelled(true);
+				if(event.getBlock().getType().equals(Material.BARRIER)) {
+					house_handler.remove_bloc_to_house(event.getPlayer(), event.getBlock());
+				}else {
+					house_handler.add_bloc_to_house(event.getPlayer(), event.getBlock());
+					event.setCancelled(true);
+				}
 			}else {
 				if(!griefs.contains(event.getPlayer())){
 				if(location_in_cite(event.getBlock().getLocation())){//Dans la cite ?
-					Player player = event.getPlayer();
-					if(!in_house(player,event.getBlock().getLocation())){
+					if(!in_house(event.getPlayer(),event.getBlock().getLocation())){
 						event.setCancelled(true);
 					}
 				}
@@ -252,23 +254,23 @@ public class main extends JavaPlugin implements Listener {
 
 	@EventHandler
 	public void onClick(PlayerInteractEvent event){
+		if(in_house(event.getPlayer(), event.getPlayer().getLocation())){
+			log.info("PUTAIN");
+		}
 		Player player = event.getPlayer();
-		if(is_legit_griefer(player) || in_house(player, player.getLocation())) {
-			event.setCancelled(false);
-		}else if(event.getAction() == Action.PHYSICAL && event.getClickedBlock().getType() == Material.FARMLAND) {
+		if(event.getAction() == Action.PHYSICAL && event.getClickedBlock().getType() == Material.FARMLAND) {
 	        event.setCancelled(true);
+		}else if(is_legit_griefer(player) || in_house(player, player.getLocation())) {
+			event.setCancelled(false);
 		}else if(item_banned_rightclick.contains(player.getInventory().getItemInMainHand().getType()) || item_banned_rightclick.contains(player.getInventory().getItemInOffHand().getType())) {
 			event.setCancelled(true);
 		}else if(location_in_cite(event.getPlayer().getLocation())){
-			
 			if(event.getAction().equals(Action.RIGHT_CLICK_BLOCK)){
-				Location block_location=event.getClickedBlock().getLocation();
-				if(location_in_cite(block_location) && !in_house(event.getPlayer(), block_location) && !is_legit_griefer(event.getPlayer()) && house_handler.location_in_any_house(block_location)) {//DAns la cité pas legit griefer pas dans sa maison mais dans une maison
-					event.setCancelled(true);
-				}
-				
+				Location block_location = event.getClickedBlock().getLocation();
 				if(event.getClickedBlock().getState() instanceof Sign){//SIGN
 					event_handle_sign_click(event);
+				}else if(house_handler.location_in_any_house(block_location) && !in_house(player, block_location)) {//Dans la cité pas legit griefer pas dans sa maison mais dans une maison
+					event.setCancelled(true);
 				}
 			}
 		}
@@ -302,21 +304,7 @@ public class main extends JavaPlugin implements Listener {
 		}
 	}
 	
-	boolean in_house(Player player,Location loc) {
-		if(!loc.getWorld().equals(world)){
-			return false;
-		}
-		Block block = loc.getBlock();
-		
-		for(int i = 1;i<=maison.getInt(teams_handler.get_player_team(player) + ".i");i++){
-			for(int v = 1;v <=maison.getInt(teams_handler.get_player_team(player) + "." + i + ".i");v++){
-				if(maison.getVector(teams_handler.get_player_team(player) + "." + i + "." + v).equals(block.getLocation().toVector())){
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+	
 	
 	void event_handle_sign_click(PlayerInteractEvent event) {
 		Player player = event.getPlayer();
@@ -340,7 +328,20 @@ public class main extends JavaPlugin implements Listener {
 		return griefs.contains(player);
 	}
 	
-	
+	boolean in_house(Player player,Location loc) {
+		if(!loc.getWorld().equals(world)){
+			return false;
+		}
+		
+		for(int i = 1;i<=maison.getInt(teams_handler.get_player_team(player) + ".i");i++){
+			for(int v = 1;v <=maison.getInt(teams_handler.get_player_team(player) + "." + i + ".i");v++){
+				if(maison.getVector(teams_handler.get_player_team(player) + "." + i + "." + v).equals(loc.getBlock().getLocation().toVector())){
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 }
 
 
